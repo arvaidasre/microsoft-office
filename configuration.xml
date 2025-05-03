@@ -1,0 +1,27 @@
+<Configuration>
+  <Add OfficeClientEdition="64" Channel="PerpetualVL2021">
+    <Product ID="ProPlus2021Volume">
+      <Language ID="lt-lt" />
+      <ExcludeApp ID="Access" />
+      <ExcludeApp ID="Publisher" />
+      <ExcludeApp ID="OneNote" />
+      <ExcludeApp ID="Outlook" />
+      <ExcludeApp ID="SkypeforBusiness" />
+      <ExcludeApp ID="Lync" />
+      <ExcludeApp ID="Teams" />
+      <ExcludeApp ID="OneDrive" />
+    </Product>
+    <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
+    <Property Name="AUTOACTIVATE" Value="0" />
+    <Property Name="SharedComputerLicensing" Value="0" />
+    <Property Name="PinIconsToTaskbar" Value="FALSE" />
+    <Property Name="EXCLUDEAPP" Value="Bing,Search" />
+    <Property Name="UseOfficeForDarkSystemTheme" Value="TRUE" />
+    <Property Name="MigrateArch" Value="TRUE" />
+  </Add>
+  <RemoveMSI />
+  <Display Level="None" AcceptEULA="TRUE" />
+  <Updates Enabled="FALSE" />
+  <Property Name="DONOTCREATEDESKTOPSHORTCUT" Value="TRUE" />
+  <DisableLogging>TRUE</DisableLogging>
+</Configuration>
