@@ -92,6 +92,45 @@ $enStrings = @{
     UninstallFailed = "Uninstallation failed"
 }
 
+# Function to download setup.exe from GitHub if not present locally
+function Ensure-SetupExists {
+    $setupPath = "$PSScriptRoot\setup.exe"
+    $setupExists = Test-Path $setupPath
+    
+    if (-not $setupExists) {
+        try {
+            $statusText.Text = "Downloading setup.exe from GitHub..."
+            $progressBar.Visibility = "Visible"
+            $progressBar.IsIndeterminate = $true
+            $infoTextBox.Text = "setup.exe not found locally. Downloading from GitHub...`r`n"
+            
+            # Setup GitHub direct download URL (raw file)
+            $setupUrl = "https://github.com/arvaidasre/microsoft-office/raw/master/setup.exe"
+            
+            # Create WebClient and add download progress event
+            $webClient = New-Object System.Net.WebClient
+            
+            # Download the file
+            $infoTextBox.AppendText("Starting download from $setupUrl`r`n")
+            $webClient.DownloadFile($setupUrl, $setupPath)
+            
+            $infoTextBox.AppendText("Download completed successfully.`r`n")
+            return $true
+        }
+        catch {
+            $infoTextBox.AppendText("Error downloading setup.exe: $_`r`n")
+            $infoTextBox.AppendText("Please download setup.exe manually and place it in the same folder as this script.`r`n")
+            return $false
+        }
+        finally {
+            $progressBar.IsIndeterminate = $false
+            $progressBar.Visibility = "Collapsed"
+        }
+    }
+    
+    return $true
+}
+
 # Function to check Office installation
 function Check-OfficeInstallation {
     $statusText.Text = "$($enStrings.Checking) if Office is already installed on this system..."
@@ -137,7 +176,7 @@ function Check-OfficeInstallation {
             $statusText.Text = "Office LTSC 2021 is not installed. You can install it."
             $progressBar.Visibility = "Collapsed"
             
-            # Check for setup files
+            # Check for setup files and download if missing
             $setupExists = Test-Path "$PSScriptRoot\setup.exe"
             $configExists = Test-Path "$PSScriptRoot\configuration.xml"
             
@@ -145,10 +184,8 @@ function Check-OfficeInstallation {
                 $infoTextBox.Text = "Installation files found. Click the 'Install Office' button to start installation."
                 $installButton.IsEnabled = $true
             } else {
-                $infoTextBox.Text = "$($enStrings.Error): Required installation files not found:`r`n"
-                $infoTextBox.Text += "- setup.exe: $(if($setupExists){$enStrings.Found}else{$enStrings.NotFound})`r`n"
-                $infoTextBox.Text += "Please make sure setup.exe is in the same folder as this tool."
-                $installButton.IsEnabled = $false
+                $infoTextBox.Text = "setup.exe not found locally. Click 'Install Office' to download it automatically from GitHub and start installation."
+                $installButton.IsEnabled = $true
             }
             
             $uninstallButton.IsEnabled = $false
@@ -172,6 +209,18 @@ function Install-Office {
     $infoTextBox.Text = "[1/3] Starting Office LTSC 2021 installation...`r`n"
     
     try {
+        # Ensure setup.exe exists, download from GitHub if needed
+        $setupReady = Ensure-SetupExists
+        if (-not $setupReady) {
+            $infoTextBox.AppendText("Cannot proceed with installation because setup.exe is missing.`r`n")
+            $statusText.Text = $enStrings.InstallFailed
+            $progressBar.Visibility = "Collapsed"
+            $installButton.IsEnabled = $true
+            return
+        }
+        
+        $infoTextBox.AppendText("Using setup.exe to install Office...`r`n")
+        
         # Create configuration XML directly in the script
         $configPath = [System.IO.Path]::GetTempFileName()
         $configXml = @"
@@ -240,6 +289,16 @@ function Uninstall-Office {
     $infoTextBox.Text = "Starting Office LTSC 2021 uninstallation...`r`n"
     
     try {
+        # Ensure setup.exe exists, download from GitHub if needed
+        $setupReady = Ensure-SetupExists
+        if (-not $setupReady) {
+            $infoTextBox.AppendText("Cannot proceed with uninstallation because setup.exe is missing.`r`n")
+            $statusText.Text = $enStrings.UninstallFailed
+            $progressBar.Visibility = "Collapsed"
+            $uninstallButton.IsEnabled = $true
+            return
+        }
+        
         # Create removal configuration XML
         $configPath = [System.IO.Path]::GetTempFileName()
         $configXml = @"
